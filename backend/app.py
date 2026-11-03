@@ -1,9 +1,15 @@
 
-from flask import Flask, jsonify
+from flask import Flask, jsonify, request
+from flask_cors import CORS
 
+# Create Flask application
 app = Flask(__name__)
 
+# Enable communication with frontend
+CORS(app)
 
+
+# 1. HOME API
 @app.route("/")
 def home():
     return jsonify({
@@ -12,6 +18,7 @@ def home():
     })
 
 
+# 2. HEALTH CHECK API
 @app.route("/api/health")
 def health():
     return jsonify({
@@ -20,9 +27,7 @@ def health():
     })
 
 
-if __name__ == "__main__":
-    app.run(debug=True)
-
+# 3. TEMPORARY MOVIE DATA
 movies = [
     {
         "id": 1,
@@ -51,24 +56,33 @@ movies = [
 ]
 
 
-@app.route("/api/search")
+# 4. MOVIE SEARCH API
+@app.route("/api/search", methods=["GET"])
 def search_movies():
-    from flask import request
 
+    # Get search query
     query = request.args.get("q", "").strip().lower()
 
+    # Validate search query
     if not query:
         return jsonify({
             "error": "Please enter a movie name"
         }), 400
 
+    # Search matching movies
     results = [
         movie for movie in movies
         if query in movie["title"].lower()
     ]
 
+    # Return search results
     return jsonify({
         "query": query,
         "total_results": len(results),
         "results": results
     })
+
+
+# 5. START FLASK SERVER
+if __name__ == "__main__":
+    app.run(debug=True)
