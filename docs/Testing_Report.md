@@ -1,11 +1,12 @@
-
 # CineSearch — Software Testing Report
 
 ## 1. Introduction
 
 This document describes the automated testing performed on the CineSearch application.
 
-The purpose of testing is to verify the functionality of the Flask backend, validate API responses, identify errors and ensure that the application behaves as expected.
+The purpose of testing is to verify the functionality of the Flask backend, validate API responses, test frontend interactions, identify errors and ensure that the application behaves as expected.
+
+Both backend API testing and frontend browser testing have been performed.
 
 ## 2. Testing Environment
 
@@ -13,20 +14,25 @@ The purpose of testing is to verify the functionality of the Flask backend, vali
 |---|---|
 | Programming Language | Python 3.14.10 |
 | Backend Framework | Flask |
-| Testing Framework | Pytest 9.2.0 |
+| Backend Testing Framework | Pytest 9.2.0 |
+| Frontend Testing Framework | Playwright |
 | Coverage Tool | pytest-cov 7.1.0 |
 | Frontend | HTML, CSS, JavaScript |
 | Operating System | Windows |
 | API Format | JSON |
+| Browser Testing | Chromium (Headless) |
 
 ## 3. Testing Approach
 
-Automated API testing was performed using Pytest and Flask's built-in test client.
+Two types of automated testing were performed.
+
+### 3.1 Backend API Testing
+
+Backend testing was performed using Pytest and Flask's built-in test client.
 
 The test client sends HTTP requests directly to the Flask application without requiring the development server to run separately.
 
-The testing process includes:
-
+Testing includes:
 - Functional testing
 - API response validation
 - Input validation
@@ -35,9 +41,25 @@ The testing process includes:
 - Search history testing
 - Movie ratings testing
 
-## 4. Test Cases
+### 3.2 Frontend Browser Testing
 
-A total of 22 automated test cases were executed.
+Frontend testing was performed using Playwright with Chromium.
+
+These tests simulate user interactions with the CineSearch website and verify that the frontend works correctly with the backend API.
+
+Testing includes:
+- Frontend page loading
+- Search input and button
+- Search functionality
+- Autocomplete suggestions
+- Movie details popup
+- Popup closing functionality
+- Search history section
+- Filter controls
+
+## 4. Backend Test Cases
+
+A total of 22 automated backend test cases were executed.
 
 | No. | Test Case | Expected Result |
 |---|---|---|
@@ -64,9 +86,29 @@ A total of 22 automated test cases were executed.
 | 21 | Movie without ratings | Zero average rating |
 | 22 | Ratings for missing movie | HTTP 404 |
 
-## 5. Test Execution
+## 5. Frontend Test Cases
 
-The following command was used to execute the automated test suite:
+A total of 11 automated frontend test cases were executed using Playwright.
+
+| No. | Test Case | Expected Result |
+|---|---|---|
+| 1 | Frontend page loading | Page loads successfully |
+| 2 | Search input | Search field is available |
+| 3 | Search button | Button is available |
+| 4 | Filter controls | Filters are visible |
+| 5 | Search history section | History section is available |
+| 6 | Movie details modal | Modal element exists |
+| 7 | Search for Interstellar | Matching movie displayed |
+| 8 | Search for Inception | Matching movie displayed |
+| 9 | Autocomplete functionality | Suggestions displayed |
+| 10 | Movie details popup | Popup opens successfully |
+| 11 | Close movie popup | Popup closes successfully |
+
+## 6. Test Execution
+
+### 6.1 Backend Test Execution
+
+Command:
 
 ```powershell
 python -m pytest tests/test_api.py -v
@@ -77,13 +119,41 @@ Result:
 - Total tests: 22
 - Passed: 22
 - Failed: 0
-- Execution time: 0.19 seconds
 
-**Overall result: All 22 tests passed.**
+**Overall result: All 22 backend tests passed.**
 
-## 6. Code Coverage Analysis
+### 6.2 Frontend Test Execution
 
-The coverage report was generated using:
+The Flask backend must be running before executing the frontend tests. The Playwright test fixture starts its own frontend server.
+
+Command:
+
+```powershell
+python -m pytest tests/test_frontend.py -v
+```
+
+Result:
+
+- Total tests: 11
+- Passed: 11
+- Failed: 0
+- Execution time: 23.51 seconds
+
+**Overall result: All 11 frontend tests passed.**
+
+### 6.3 Combined Testing Summary
+
+| Testing Category | Total Tests | Passed | Failed |
+|---|---:|---:|---:|
+| Backend API Testing | 22 | 22 | 0 |
+| Frontend Browser Testing | 11 | 11 | 0 |
+| **Total** | **33** | **33** | **0** |
+
+**Overall result: All 33 automated tests passed.**
+
+## 7. Code Coverage Analysis
+
+Backend code coverage was generated using:
 
 ```powershell
 python -m pytest --cov=app --cov=routes --cov=services --cov-report=term-missing tests/test_api.py
@@ -104,13 +174,13 @@ python -m pytest --cov=app --cov=routes --cov=services --cov-report=term-missing
 | search_service.py | 100% |
 | **Overall Backend** | **99%** |
 
-## 7. Coverage Summary
+## 8. Coverage Summary
 
 The backend contains 113 executable statements.
 
 - Executed statements: 112
 - Missed statements: 1
-- Overall coverage: 99%
+- Overall backend coverage: 99%
 
 The only uncovered statement is the Flask development-server startup instruction:
 
@@ -120,7 +190,9 @@ app.run(debug=True)
 
 This statement is normally not executed during API tests because the Flask test client is used instead.
 
-## 8. Testing Results
+Note: The 99% coverage figure represents backend code coverage only. Frontend browser tests are not included in this calculation.
+
+## 9. Testing Results
 
 The automated tests confirm that:
 
@@ -133,10 +205,15 @@ The automated tests confirm that:
 7. Search history can be cleared.
 8. Invalid search-log requests are rejected.
 9. Empty queries are handled safely.
+10. The frontend loads successfully.
+11. Users can search for movies through the interface.
+12. Autocomplete suggestions work.
+13. Movie details can be viewed in a popup.
+14. The movie popup can be closed.
 
-## 9. Current Limitations
+## 10. Current Limitations
 
-The current testing results apply to the existing backend implementation and temporary test data.
+The current testing results apply to the existing implementation and temporary test data.
 
 The following areas still require testing during final integration:
 
@@ -149,12 +226,14 @@ The following areas still require testing during final integration:
 
 Search history currently uses in-memory storage and resets when the Flask server restarts.
 
-## 10. Conclusion
+## 11. Conclusion
 
-The CineSearch backend has successfully passed 22 automated test cases with an overall code coverage of 99%.
+The CineSearch application has successfully passed 33 automated test cases, including 22 backend API tests and 11 frontend browser tests.
 
-The testing framework provides a reliable foundation for identifying errors and validating future changes.
+The backend achieved an overall code coverage of 99%.
 
-Further testing will be performed after the integration of the database, search algorithms and recommendation modules.
+These results provide a reliable foundation for identifying errors, validating application functionality and supporting future development.
 
-**Testing status: Initial backend testing completed successfully.**
+Further testing will be performed after integration of the database, search algorithms and recommendation modules.
+
+**Testing status: Initial backend and frontend automated testing completed successfully.**
