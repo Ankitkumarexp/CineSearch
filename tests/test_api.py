@@ -116,3 +116,76 @@ def test_search_history_workflow(client):
 
     assert final_response.status_code == 200
     assert final_response.json["total_searches"] == 0
+
+def test_autocomplete_without_query(client):
+    response = client.get("/api/autocomplete")
+
+    assert response.status_code == 400
+    assert response.json["error"] == "Please enter a search query"
+
+
+def test_search_log_without_json(client):
+    response = client.post(
+        "/api/search-log",
+        data="",
+        content_type="application/json"
+    )
+
+    assert response.status_code == 400
+
+
+@pytest.mark.parametrize(
+    "payload",
+    [
+        {"query": "Interstellar"},
+        {"user_id": 0, "query": "Interstellar"},
+        {"user_id": -1, "query": "Interstellar"},
+        {"user_id": True, "query": "Interstellar"},
+        {"user_id": "101", "query": "Interstellar"},
+        {"user_id": 101, "query": ""}
+    ]
+)
+def test_invalid_search_log(client, payload):
+    response = client.post(
+        "/api/search-log",
+        json=payload
+    )
+
+    assert response.status_code == 400
+
+
+def test_search_service_empty_query():
+    from services.search_service import search_movies
+
+    assert search_movies("") == []
+    assert search_movies("   ") == []
+
+
+def test_autocomplete_service_empty_query():
+    from services.search_service import autocomplete_movies
+
+    assert autocomplete_movies("") == []
+    assert autocomplete_movies("   ") == []
+
+
+def test_autocomplete_limit():
+    from services.search_service import autocomplete_movies
+
+    results = autocomplete_movies("I", limit=1)
+
+    assert len(results) == 1
+
+
+def test_movie_without_ratings(client):
+    response = client.get("/api/movies/3/ratings")
+
+    assert response.status_code == 200
+    assert response.json["total_ratings"] == 0
+    assert response.json["average_rating"] == 0
+
+
+def test_ratings_for_missing_movie(client):
+    response = client.get("/api/movies/999999/ratings")
+
+    assert response.status_code == 404
+    assert response.json["error"] == "Movie not found"
