@@ -10,17 +10,24 @@ from services.logging_service import add_search_log
 search_bp = Blueprint("search", __name__)
 
 
+# Movie search API
 @search_bp.route("/api/search", methods=["GET"])
 def search():
 
     query = request.args.get("q", "").strip()
+    mode = request.args.get("mode", "and").strip().lower()
 
     if not query:
         return jsonify({
             "error": "Please enter a movie name"
         }), 400
 
-    results = search_movies(query)
+    if mode not in ("and", "or"):
+        return jsonify({
+            "error": "Invalid search mode. Use 'and' or 'or'."
+        }), 400
+
+    results = search_movies(query, mode=mode)
 
     return jsonify({
         "query": query,
@@ -29,6 +36,7 @@ def search():
     })
 
 
+# Autocomplete API
 @search_bp.route("/api/autocomplete", methods=["GET"])
 def autocomplete():
 
@@ -47,6 +55,8 @@ def autocomplete():
         "total_suggestions": len(suggestions)
     })
 
+
+# Search history logging API
 @search_bp.route("/api/search-log", methods=["POST"])
 def create_search_log():
 

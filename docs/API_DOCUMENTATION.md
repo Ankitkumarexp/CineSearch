@@ -1,4 +1,3 @@
-
 # CineSearch API Documentation
 
 ## 1. Project Overview
@@ -38,28 +37,82 @@ Example response:
 
 **Endpoint:** `GET /api/search?q=movie_name`
 
-**Purpose:** Searches movies using a search query.
+**Purpose:** Searches movies using a search query and supports Boolean AND and OR operations.
 
-Example:
+**Query Parameters:**
 
-`GET /api/search?q=Interstellar`
+| Parameter | Required | Description |
+|---|---|---|
+| `q` | Yes | Movie search query |
+| `mode` | No | Search mode: `and` or `or`. Default is `and`. |
+
+**Boolean Search Modes:**
+
+- **AND (`mode=and`):** Returns movies containing all query terms.
+- **OR (`mode=or`):** Returns movies containing at least one query term.
+- **Default:** If no mode is specified, AND search is used.
+
+**Example 1 – AND Search:**
+
+`GET /api/search?q=dark%20knight&mode=and`
 
 Example response:
 
 ```json
 {
-  "query": "Interstellar",
+  "query": "dark knight",
   "total_results": 1,
+  "results": [
+    {
+      "id": 3,
+      "title": "The Dark Knight",
+      "year": 2008,
+      "genre": "Action, Drama"
+    }
+  ]
+}
+```
+
+**Example 2 – OR Search:**
+
+`GET /api/search?q=interstellar%20inception&mode=or`
+
+Example response:
+
+```json
+{
+  "query": "interstellar inception",
+  "total_results": 2,
   "results": [
     {
       "id": 2,
       "title": "Interstellar",
       "year": 2014,
       "genre": "Adventure, Sci-Fi"
+    },
+    {
+      "id": 4,
+      "title": "Inception",
+      "year": 2010,
+      "genre": "Action, Sci-Fi"
     }
   ]
 }
 ```
+
+**Example 3 – Invalid Search Mode:**
+
+`GET /api/search?q=animation&mode=xyz`
+
+Example response:
+
+```json
+{
+  "error": "Invalid search mode. Use 'and' or 'or'."
+}
+```
+
+**Current implementation note:** The integrated search index currently uses movie titles as its indexed text. Genre-based searching is not yet integrated.
 
 ### 3.3 Movie Autocomplete
 
@@ -180,11 +233,16 @@ Example:
 
 ## 7. Current Development Status
 
-The following features have been implemented and tested with temporary data:
+The following features have been implemented and tested:
 
 - Flask backend setup
 - Movie search API
-- Autocomplete API
+- Boolean AND and OR search integration
+- Search mode validation
+- Text preprocessing and tokenization
+- Inverted index integration
+- Trie-based autocomplete integration
+- Top-K algorithm module tested independently
 - Movie details API
 - Movie ratings API
 - Search history API
@@ -193,29 +251,36 @@ The following features have been implemented and tested with temporary data:
 - Movie details popup
 - Search history interface
 
-**Important:** Current movie and rating data are temporary mock data. Search history is stored in memory and resets when the backend restarts. Persistent database integration and teammate module integration are pending.
+**Testing Results:**
+
+- Backend API tests: 22 passed
+- Frontend tests: 11 passed
+- Student 1 search algorithm checks: All 4 checks passed
+- Boolean AND/OR API tests: Passed
+
+**Important:** Current movie and rating data are temporary mock data. Search history is stored in memory and resets when the backend restarts. Persistent database integration and ranking algorithm integration are pending. The Top-K utility has been tested independently but is not yet connected to a complete ranking pipeline.
 
 ## 8. Running the Project
 
 Open a terminal in the project root.
 
-Start the backend:
+**Start the backend:**
 
 ```powershell
 python backend/app.py
 ```
 
-Start the frontend in another terminal:
+**Start the frontend in another terminal:**
 
 ```powershell
 cd frontend
 python -m http.server 5500
 ```
 
-Open the frontend:
+**Open the frontend:**
 
 `http://127.0.0.1:5500`
 
-Backend API:
+**Backend API:**
 
 `http://127.0.0.1:5000`

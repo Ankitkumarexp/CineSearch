@@ -1,5 +1,10 @@
 
-# Temporary movie data for API testing
+from search.preprocessing import tokenize
+from search.inverted_index import InvertedIndex
+from search.trie import PrefixTrie
+
+# Temporary movie data for API testing.
+# Student 2's SQLite database will replace this later.
 
 movies = [
     {
@@ -28,49 +33,71 @@ movies = [
     }
 ]
 
+# Build Student 1's search structures.
+movie_index = InvertedIndex()
+movie_trie = PrefixTrie()
 
-# Search movies by title
-def search_movies(query):
+movie_lookup = {
+    movie["id"]: movie
+    for movie in movies
+}
 
-    query = query.strip().lower()
+for movie in movies:
+    movie_index.add_document(
+        movie["id"],
+        movie["title"]
+    )
 
-    if not query:
+    movie_trie.insert(movie["title"])
+
+
+# Search movies using Boolean AND or OR.
+def search_movies(query, mode="and"):
+
+    if not query or not query.strip():
         return []
 
-    results = [
-        movie for movie in movies
-        if query in movie["title"].lower()
+    query = query.strip()
+    tokens = tokenize(query)
+
+    # Preserve substring matching for stop-word-only queries.
+    if not tokens:
+        return [
+            movie for movie in movies
+            if query.lower() in movie["title"].lower()
+        ]
+
+    if mode == "or":
+        matched_ids = movie_index.boolean_or(tokens)
+    else:
+        matched_ids = movie_index.boolean_and(tokens)
+
+    return [
+        movie_lookup[movie_id]
+        for movie_id in movie_lookup
+        if movie_id in matched_ids
     ]
 
-    return results
 
-
-# Generate autocomplete suggestions
+# Generate autocomplete using Student 1's Trie.
 def autocomplete_movies(query, limit=5):
 
-    query = query.strip().lower()
-
-    if not query:
+    if not query or not query.strip():
         return []
 
-    results = [
-        movie["title"]
-        for movie in movies
-        if movie["title"].lower().startswith(query)
-    ]
+    if limit <= 0:
+        return []
 
-    return results[:limit]
+    return movie_trie.search_prefix(query, limit)
 
-# Get movie details using movie ID
+
+# Get movie details using movie ID.
 def get_movie_by_id(movie_id):
 
-    for movie in movies:
-        if movie["id"] == movie_id:
-            return movie
+    return movie_lookup.get(movie_id)
 
-    return None
 
-# Temporary ratings for API integration testing
+# Temporary ratings for API testing.
 ratings_data = {
     1: [
         {"user_id": 101, "rating": 4.5},
