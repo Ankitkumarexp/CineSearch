@@ -143,3 +143,40 @@ Database management, search algorithms, ranking, recommendation logic, backend a
 ## Contributors
 
 CineSearch is developed as a collaborative student project.
+
+## Team Contributions
+
+The CineSearch project is developed collaboratively, with each student responsible for a specific workstream.
+
+### Student 1 – Search and Retrieval
+- Data preprocessing
+- Inverted Index implementation
+- Trie implementation
+- Search ranking
+- Top-K retrieval
+
+### Student 2 – Database and Data Engineering
+- MovieLens dataset handling
+- Relational database schema design
+- ETL and data import
+- SQL queries and indexing
+- Query performance analysis
+- Transactions and ACID properties
+- Database scalability and validation
+
+### Student 3 – Recommendation System
+- Popularity-based recommendations
+- Genre affinity
+- Co-occurrence-based recommendations
+
+### Student 4 – Backend and Frontend
+- Backend development
+- Frontend development
+- Application integration
+
+### Shared Responsibilities
+- Project integration
+- Documentation
+- Experiments and performance evaluation
+- Testing and validation
+
