@@ -1,4 +1,4 @@
-﻿
+
 """
 CineSearch - Student 2
 SQL Query Library

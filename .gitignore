@@ -218,6 +218,8 @@ __marimo__/
 
 # Streamlit
 .streamlit/secrets.toml
+*.db
+data/*.pkl
 .vscode/
 
 # CineSearch local dataset and database
