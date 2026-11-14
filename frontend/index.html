@@ -1,4 +1,4 @@
-
+﻿
 <!doctype html>
 <html lang="en">
 <head>
@@ -10,7 +10,7 @@
 
 <body>
   <header>
-    <a class="brand" href="#">🎬 CineSearch</a>
+    <a class="brand" href="#">ðŸŽ¬ CineSearch</a>
     <span>Discover something worth watching.</span>
   </header>
 
@@ -26,7 +26,7 @@
         <ul id="suggestions" hidden></ul>
       </div>
 
-      <p id="apiStatus" class="status">Connecting to backend…</p>
+      <p id="apiStatus" class="status">Connecting to backendâ€¦</p>
     </section>
 
     <section>
@@ -65,6 +65,55 @@
       </div>
     </section>
 
+        <!-- Movie Recommendations -->
+    <section class="recommendations-section">
+      <div class="heading">
+        <div>
+          <p class="eyebrow">TRENDING</p>
+          <h2>Popular Movies</h2>
+        </div>
+      </div>
+      <div id="popularRecommendations" class="grid">
+        <div class="empty">Loading popular movies...</div>
+      </div>
+    </section>
+
+    <section class="recommendations-section">
+      <div class="heading">
+        <div>
+          <p class="eyebrow">PERSONALIZED</p>
+          <h2>Recommended for You</h2>
+        </div>
+      </div>
+      <div id="genreRecommendations" class="grid">
+        <div class="empty">Recommendations will appear here.</div>
+      </div>
+    </section>
+
+    <section class="recommendations-section">
+      <div class="heading">
+        <div>
+          <p class="eyebrow">DISCOVER</p>
+          <h2>More Ways to Discover</h2>
+        </div>
+      </div>
+
+      <h3>Genre Affinity</h3>
+      <div id="genreAffinityRecommendations" class="grid">
+        <div class="empty">Loading recommendations...</div>
+      </div>
+
+      <h3>Similar Users</h3>
+      <div id="cooccurrenceRecommendations" class="grid">
+        <div class="empty">Loading recommendations...</div>
+      </div>
+
+      <h3>Similar Movies (Jaccard)</h3>
+      <div id="jaccardRecommendations" class="grid">
+        <div class="empty">Loading recommendations...</div>
+      </div>
+    </section>
+
     <!-- Search History -->
     <section class="history-section">
       <div class="heading">
@@ -93,7 +142,7 @@
     </div>
   </div>
 
-  <footer>CINESEARCH · MOVIE DISCOVERY MADE SIMPLE</footer>
+  <footer>CINESEARCH Â· MOVIE DISCOVERY MADE SIMPLE</footer>
 
   <script src="script.js"></script>
 </body>

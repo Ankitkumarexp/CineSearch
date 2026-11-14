@@ -95,7 +95,7 @@ def test_search_interstellar(browser_page):
 
     browser_page.locator("#results").get_by_text(
         "Interstellar",
-        exact=False
+        exact=True
     ).wait_for(timeout=10000)
 
     assert "Interstellar" in browser_page.locator("#results").inner_text()

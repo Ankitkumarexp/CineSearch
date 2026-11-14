@@ -450,3 +450,163 @@ fetch(`${API}/api/health`)
   });
 
 loadHistory();
+
+// ==========================================
+// CineSearch Recommendation Integration
+// ==========================================
+
+async function fetchRecommendations(endpoint) {
+  try {
+    const response = await fetch(`${API}${endpoint}`);
+
+    if (!response.ok) {
+      throw new Error(`API error: ${response.status}`);
+    }
+
+    return await response.json();
+  } catch (error) {
+    console.error("Recommendation error:", error);
+    return { recommendations: [] };
+  }
+}
+
+function renderRecommendations(containerId, movies, emptyMessage) {
+  const container = $(containerId);
+
+  if (!container) return;
+
+  if (!movies || movies.length === 0) {
+    container.innerHTML = `
+      <div class="empty">${safe(emptyMessage)}</div>
+    `;
+    return;
+  }
+
+  container.innerHTML = movies.map(movie => {
+    const genres = movie.genres || movie.genre || [];
+    const rating = Number(movie.average_rating);
+    const year = movie.release_year || movie.year || "Year unknown";
+
+    return `
+      <article class="card recommendation-card"
+        data-movie-id="${Number(movie.id)}"
+        tabindex="0"
+        role="button"
+        aria-label="View ${safe(movie.title)}">
+
+        <h3>${safe(movie.title)}</h3>
+
+        <p class="meta">${safe(year)}</p>
+
+        <div class="tags">
+          ${genres.map(genre =>
+            `<span>${safe(genre)}</span>`
+          ).join("")}
+        </div>
+
+        <p class="rating-text">
+          ★ ${Number.isFinite(rating) ? rating.toFixed(2) : "N/A"} / 5
+        </p>
+
+        <p class="meta">
+          ${Number(movie.rating_count || 0).toLocaleString()} ratings
+        </p>
+      </article>
+    `;
+  }).join("");
+}
+
+async function loadPopularRecommendations() {
+  const data = await fetchRecommendations(
+    "/api/recommendations/popular?limit=6"
+  );
+
+  renderRecommendations(
+    "popularRecommendations",
+    data.recommendations,
+    "No popular movies available."
+  );
+}
+
+async function loadGenreRecommendations(genre = "Comedy") {
+  const data = await fetchRecommendations(
+    `/api/recommendations/genre/${encodeURIComponent(genre)}?limit=6`
+  );
+
+  renderRecommendations(
+    "genreRecommendations",
+    data.recommendations,
+    "No genre recommendations available."
+  );
+}
+
+async function loadPersonalizedRecommendations() {
+  const endpoints = [
+    {
+      url: `/api/recommendations/user/${USER_ID}/genre-affinity?limit=5`,
+      container: "genreAffinityRecommendations",
+      message: "Rate some movies to get genre-based recommendations."
+    },
+    {
+      url: `/api/recommendations/user/${USER_ID}/cooccurrence?limit=5`,
+      container: "cooccurrenceRecommendations",
+      message: "Recommendations based on similar users will appear after you rate movies."
+    },
+    {
+      url: `/api/recommendations/user/${USER_ID}/jaccard?limit=5`,
+      container: "jaccardRecommendations",
+      message: "Rate some movies to discover similar movies using Jaccard similarity."
+    }
+  ];
+
+  await Promise.all(endpoints.map(async item => {
+    const data = await fetchRecommendations(item.url);
+
+    renderRecommendations(
+      item.container,
+      data.recommendations,
+      item.message
+    );
+  }));
+}
+
+// Open recommendation movie cards using existing movie details popup.
+function setupRecommendationClicks() {
+  ["popularRecommendations", "genreRecommendations",
+   "genreAffinityRecommendations", "cooccurrenceRecommendations",
+   "jaccardRecommendations"].forEach(containerId => {
+
+    const container = $(containerId);
+    if (!container) return;
+
+    container.addEventListener("click", event => {
+      const card = event.target.closest("[data-movie-id]");
+      if (card) {
+        openMovieDetails(Number(card.dataset.movieId));
+      }
+    });
+
+    container.addEventListener("keydown", event => {
+      if (event.key !== "Enter" && event.key !== " ") return;
+
+      const card = event.target.closest("[data-movie-id]");
+      if (card) {
+        event.preventDefault();
+        openMovieDetails(Number(card.dataset.movieId));
+      }
+    });
+  });
+}
+
+// Load recommendation sections when the page starts.
+async function initializeRecommendations() {
+  setupRecommendationClicks();
+
+  await Promise.all([
+    loadPopularRecommendations(),
+    loadGenreRecommendations("Comedy"),
+    loadPersonalizedRecommendations()
+  ]);
+}
+
+initializeRecommendations();

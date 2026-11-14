@@ -177,7 +177,7 @@ def test_autocomplete_limit():
 
 
 def test_movie_without_ratings(client):
-    response = client.get("/api/movies/3/ratings")
+    response = client.get("/api/movies/51/ratings")
 
     assert response.status_code == 200
     assert response.json["total_ratings"] == 0
@@ -189,3 +189,64 @@ def test_ratings_for_missing_movie(client):
 
     assert response.status_code == 404
     assert response.json["error"] == "Movie not found"
+
+# --------------------------------------------------
+# RECOMMENDATION API TESTS
+# --------------------------------------------------
+
+def test_popular_recommendations(client):
+    response = client.get("/api/recommendations/popular?limit=5")
+
+    assert response.status_code == 200
+    assert response.json["count"] == 5
+    assert len(response.json["recommendations"]) == 5
+
+
+def test_genre_recommendations(client):
+    response = client.get("/api/recommendations/genre/Comedy?limit=5")
+
+    assert response.status_code == 200
+    assert response.json["genre"] == "Comedy"
+    assert response.json["count"] == 5
+
+
+def test_genre_affinity_recommendations(client):
+    response = client.get(
+        "/api/recommendations/user/94272/genre-affinity?limit=5"
+    )
+
+    assert response.status_code == 200
+    assert response.json["user_id"] == 94272
+    assert response.json["count"] == 5
+
+
+def test_cooccurrence_recommendations(client):
+    response = client.get(
+        "/api/recommendations/user/94272/cooccurrence?limit=5"
+    )
+
+    assert response.status_code == 200
+    assert response.json["user_id"] == 94272
+    assert response.json["count"] == 5
+
+
+def test_jaccard_recommendations(client):
+    response = client.get(
+        "/api/recommendations/user/94272/jaccard?limit=5"
+    )
+
+    assert response.status_code == 200
+    assert response.json["user_id"] == 94272
+    assert response.json["count"] == 5
+
+    for movie in response.json["recommendations"]:
+        assert "jaccard_similarity" in movie
+        assert 0 <= movie["jaccard_similarity"] <= 1
+
+
+def test_invalid_recommendation_limit(client):
+    response = client.get(
+        "/api/recommendations/popular?limit=100"
+    )
+
+    assert response.status_code == 400

@@ -27,7 +27,7 @@ timeout /t 2 /nobreak >nul
 echo.
 echo [3/3] Opening CineSearch...
 
-start "" http://127.0.0.1:5500
+start "" http://127.0.0.1:5500/frontend/
 
 echo.
 echo =====================================

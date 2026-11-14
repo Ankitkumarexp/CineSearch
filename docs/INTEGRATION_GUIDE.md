@@ -1,193 +1,242 @@
-
 # CineSearch — Team Integration Guide
 
 ## 1. Purpose
 
-This document explains how the four team members will integrate their modules into the CineSearch application.
+This document describes the architecture, responsibilities and integration of all four team members in the CineSearch application.
 
-The goal is to connect the search algorithms, database, ranking system, Flask backend and frontend without breaking existing functionality.
+The project integrates movie search algorithms, SQLite database management, ranking and recommendation algorithms, Flask REST APIs and frontend functionality.
 
-## 2. Current Architecture
+The objective is to maintain a modular application where individual components work together without disturbing existing functionality.
 
-Frontend (HTML, CSS, JavaScript)
-        |
-        | HTTP requests / JSON
-        v
-Flask Backend (Student 4)
-        |
-        +-- Search Service (Student 1)
-        |
-        +-- Database Layer (Student 2)
-        |
-        +-- Ranking & Recommendation (Student 3)
-        |
-        +-- API Integration & Testing (Student 4)
+## 2. Final Project Architecture
 
-The backend currently uses temporary movie and rating data. These will be replaced when the relevant modules are ready.
+```text
+                 FRONTEND
+          HTML + CSS + JavaScript
+                     |
+                     | HTTP / JSON
+                     |
+                     v
+               FLASK BACKEND
+                 app.py
+                     |
+          +----------+----------+
+          |          |          |
+          v          v          v
+     SEARCH API   MOVIE API   USER API
+          |          |          |
+          v          v          v
+     SEARCH       DATABASE    LOGGING
+     SERVICE      SERVICES    SERVICE
+          |
+          v
+    INVERTED INDEX
+    TRIE AUTOCOMPLETE
+    TOP-K ALGORITHM
+
+          RECOMMENDATION API
+                     |
+                     v
+             RANKING SERVICE
+                     |
+          +----------+----------+
+          |          |          |
+          v          v          v
+       POPULAR    GENRE       PERSONALIZED
+                  BASED       RECOMMENDATIONS
+                               |
+                       +-------+-------+
+                       |       |       |
+                       v       v       v
+                    GENRE   COOCCUR.  JACCARD
+
+                     |
+                     v
+               SQLITE DATABASE
+              cinesearch.db
+```
 
 ## 3. Student 1 — Search Algorithm Integration
 
-### Responsibility
+### Responsibilities
 
-Student 1 develops the movie search algorithms, including the inverted index and other search-related data structures.
+Student 1 developed the search-related algorithms and data structures.
 
-### Expected Python Interface
+### Integrated Components
 
-```python
-def search_movies(query):
-    """
-    Accepts a movie title or keyword.
-    Returns a list of matching movie dictionaries.
-    """
-    pass
+- Text preprocessing and tokenization.
+- Inverted index.
+- Trie-based autocomplete.
+- Boolean AND/OR search.
+- Top-K result selection.
 
-def autocomplete_movies(query, limit=5):
-    """
-    Returns up to 'limit' movie suggestions.
-    """
-    pass
+### Integration Files
+
+```text
+search/
+    __init__.py
+    preprocessing.py
+    inverted_index.py
+    trie.py
+    topk.py
+
+backend/services/
+    search_service.py
 ```
 
-### Expected Movie Format
+### Integration Points
 
-```json
-{
-  "id": 2,
-  "title": "Interstellar",
-  "year": 2014,
-  "genre": "Adventure, Sci-Fi"
-}
-```
-
-### Integration Point
-
-`backend/services/search_service.py`
-
-Student 4 will connect Student 1's algorithm through the existing search service interface.
-
-The following APIs should continue working:
+The search service connects the algorithms to Flask endpoints.
 
 - `GET /api/search?q=Interstellar`
 - `GET /api/autocomplete?q=In`
 
+The search index currently uses movie titles as indexed text.
+
 ## 4. Student 2 — Database Integration
 
-### Responsibility
+### Responsibilities
 
-Student 2 handles:
+Student 2 handled:
 
-- SQLite database setup
-- Movie and rating data storage
-- Dataset import
-- Database queries
-- Persistent search history, if included in the agreed database design
+- SQLite database creation.
+- Movie and genre storage.
+- MovieLens dataset import.
+- Rating and tag storage.
+- Database queries and indexing.
+- Data validation.
+- Precomputed movie statistics.
 
-### Expected Database Functions
+### Database Location
 
-```python
-def get_movie_by_id(movie_id):
-    """Returns a movie dictionary or None."""
-    pass
+`database/cinesearch.db`
 
-def get_movie_ratings(movie_id):
-    """Returns rating records for the movie."""
-    pass
+### Database Tables
 
-def get_all_movies():
-    """Returns movie records for indexing/search."""
-    pass
+| Table | Purpose |
+|---|---|
+| movie | Stores movie information |
+| genre | Stores genre information |
+| movie_genre | Maps movies to genres |
+| app_user | Stores user identifiers |
+| rating | Stores user ratings |
+| tag_event | Stores movie tags |
+| movie_stats | Stores precomputed movie statistics |
+
+### Integration Files
+
+```text
+database/
+    schema.sql
+    import_data.py
+    indexes.sql
+    queries.py
+    movie_stats.py
+    performance.py
+    scalability.py
+    transactions.py
+    validation.py
 ```
 
-### Expected Rating Format
+### Dataset Integration
 
-```json
-{
-  "user_id": 101,
-  "rating": 4.5
-}
-```
+The project uses the MovieLens 32M dataset.
 
-### Integration Point
+A deterministic sample of approximately one million ratings was imported instead of the complete 32-million-rating dataset.
 
-A database access module, with its final location agreed upon by the team.
-
-The following APIs must remain compatible:
-
-- `GET /api/movies/<movie_id>`
-- `GET /api/movies/<movie_id>/ratings`
-- `GET /api/users/<user_id>/history`
-- `DELETE /api/users/<user_id>/history`
-
-The database module should not directly modify frontend files or Flask route definitions.
+The database is connected to the search and recommendation services.
 
 ## 5. Student 3 — Ranking and Recommendation Integration
 
-### Responsibility
+### Responsibilities
 
-Student 3 develops movie ranking and recommendation algorithms.
+Student 3 developed the ranking and recommendation algorithms.
 
-### Proposed Python Interface
+### Integrated Recommendation Methods
 
-```python
-def rank_movies(query, movies):
-    """
-    Accepts a search query and matching movies.
-    Returns movies ordered by relevance.
-    """
-    pass
+#### 5.1 Popular Recommendations
 
-def recommend_movies(movie_id, limit=5):
-    """
-    Accepts a movie ID.
-    Returns up to 'limit' recommended movies.
-    """
-    pass
+Ranks movies using rating count and average rating through a composite score.
+
+#### 5.2 Genre-Based Recommendations
+
+Filters movies by genre and ranks matching movies using composite scores.
+
+#### 5.3 Genre-Affinity Recommendations
+
+Builds a user genre profile from positively rated movies and recommends unseen movies based on genre affinity.
+
+#### 5.4 User Co-occurrence Recommendations
+
+Identifies users with overlapping positive movie ratings and recommends unseen movies using their positive ratings.
+
+#### 5.5 Jaccard Similarity Recommendations
+
+Calculates similarity between movie rating user sets and recommends similar unseen movies.
+
+### Integration Files
+
+```text
+backend/services/
+    ranking_service.py
+
+backend/routes/
+    recommendation_routes.py
 ```
 
-### Expected Output
+### Recommendation APIs
 
-Ranking should return movie dictionaries in the same format used by the search API.
-
-Recommendations should also return movie dictionaries with valid movie IDs.
-
-### Integration Point
-
-A dedicated ranking or recommendation service.
-
-Student 4 will connect ranking to the existing search API once the algorithm is available.
-
-A recommendation API may be added later after agreeing on the request and response format.
+- `/api/recommendations/popular`
+- `/api/recommendations/genre/<genre>`
+- `/api/recommendations/user/<user_id>/genre-affinity`
+- `/api/recommendations/user/<user_id>/cooccurrence`
+- `/api/recommendations/user/<user_id>/jaccard`
 
 ## 6. Student 4 — Backend and Frontend Integration
 
 ### Responsibilities
 
-- Maintain Flask application structure
-- Connect team modules to backend services
-- Maintain REST API endpoints
-- Integrate backend responses with frontend
-- Handle errors and invalid requests
-- Perform API and frontend testing
-- Coordinate final integration
+Student 4 handled:
 
-### Existing Backend Structure
+- Flask application development.
+- REST API integration.
+- Search and autocomplete integration.
+- SQLite connectivity.
+- Recommendation API integration.
+- Frontend integration.
+- Search logging and history.
+- API validation and error handling.
+- Automated testing.
+- Team module integration.
+
+### Backend Structure
 
 ```text
 backend/
     app.py
+
+    integrations/
+        __init__.py
+        database_adapter.py
+        ranking_adapter.py
+        search_adapter.py
+
     routes/
         __init__.py
         search_routes.py
         movie_routes.py
         rating_routes.py
         user_routes.py
+        recommendation_routes.py
+
     services/
         __init__.py
         search_service.py
+        ranking_service.py
         logging_service.py
 ```
 
-### Existing Frontend Structure
+### Frontend Structure
 
 ```text
 frontend/
@@ -196,90 +245,127 @@ frontend/
     script.js
 ```
 
+### Frontend Features
+
+- Movie search.
+- Autocomplete suggestions.
+- Genre and rating filters.
+- Movie details popup.
+- Recent search history.
+- Popular movie recommendations.
+- Genre-based recommendations.
+- Genre-affinity recommendations.
+- User co-occurrence recommendations.
+- Jaccard similarity recommendations.
+
+The frontend communicates with the Flask backend using JavaScript Fetch API requests.
+
 ## 7. Shared Data Contract
 
-All integrated modules should use consistent field names.
+The integrated application uses consistent movie and user information.
 
 | Field | Type | Description |
 |---|---|---|
 | id | Integer | Unique movie ID |
 | title | String | Movie title |
 | year | Integer | Release year |
-| genre | String | Comma-separated genres |
+| release_year | Integer | Release year |
+| genre | Array/String | Movie genres, depending on API |
+| genres | Array | Movie genres |
+| average_rating | Number | Average movie rating |
+| rating_count | Integer | Number of ratings |
 | user_id | Integer | User identifier |
 | rating | Number | Movie rating |
 
-The final dataset may contain additional fields. Required API fields should remain consistent.
+Recommendation APIs return structured JSON responses containing recommendation counts and movie information.
 
-## 8. Integration Sequence
+## 8. Integration and Testing Sequence
 
-### Phase 1 — Search
+### Phase 1 — Search Integration
 
-1. Receive Student 1's search module.
-2. Confirm its input and output formats.
-3. Connect it to the Flask search service.
-4. Test search and autocomplete.
+- Integrated preprocessing and tokenization.
+- Connected inverted index.
+- Connected Trie autocomplete.
+- Integrated Boolean AND/OR search.
+- Tested Top-K functionality.
 
-### Phase 2 — Database
+### Phase 2 — Database Integration
 
-1. Receive Student 2's database module.
-2. Verify database file paths and schema.
-3. Replace temporary movie and rating data.
-4. Test movie details and ratings.
-5. Test persistence where implemented.
+- Created SQLite database.
+- Imported MovieLens data.
+- Created database indexes.
+- Generated movie statistics.
+- Validated database records and foreign keys.
 
-### Phase 3 — Ranking
+### Phase 3 — Ranking Integration
 
-1. Receive Student 3's ranking module.
-2. Connect ranking to search results.
-3. Test result ordering.
-4. Add recommendation integration if required.
+- Integrated composite popularity scoring.
+- Integrated genre recommendations.
+- Integrated genre-affinity recommendations.
+- Integrated co-occurrence recommendations.
+- Integrated Jaccard similarity recommendations.
 
-### Phase 4 — Final Testing
+### Phase 4 — Frontend Integration
 
-1. Test all existing APIs.
-2. Test invalid inputs and missing movies.
-3. Test frontend search and autocomplete.
-4. Test movie details and ratings.
-5. Test search history.
-6. Check that integrated modules work together.
+- Connected frontend search APIs.
+- Integrated autocomplete.
+- Connected movie details and ratings.
+- Integrated search history interface.
+- Added recommendation sections.
+- Connected recommendation sections to Flask APIs.
+
+### Phase 5 — Final Testing
+
+- Tested backend APIs.
+- Tested frontend functionality.
+- Tested recommendation endpoints.
+- Verified database connectivity.
+- Checked application integration.
+
+**Latest combined automated test result: 39 passed, 0 failed.**
 
 ## 9. Git Collaboration Rules
 
-- Each student should work on their own feature branch.
-- Avoid directly editing another student's module without coordination.
-- Commit completed and tested changes.
-- Review changes before merging into the shared branch.
-- Resolve merge conflicts carefully.
-- Do not commit large datasets, temporary files or local environment folders.
+- Each student should work on their assigned feature branch.
+- Avoid unnecessary modifications to another student's modules.
+- Review code changes before integration.
+- Test integrated modules before committing.
+- Avoid committing large datasets, local databases, cache folders and temporary files.
+- Keep backup files outside the final submission.
+- Review the final Git status before staging or pushing changes.
 
 ## 10. Current Project Status
 
-Completed by Student 4:
+| Component | Status |
+|---|---|
+| Student 1 — Search algorithms | Integrated |
+| Student 2 — SQLite database | Integrated |
+| Student 3 — Ranking and recommendations | Integrated |
+| Student 4 — Flask backend | Integrated |
+| Student 4 — Frontend integration | Integrated |
+| Recommendation frontend sections | Integrated |
+| API testing | 28 tests passed |
+| Frontend testing | 11 tests passed |
+| Combined testing | 39 tests passed |
+| Technical documentation | Updated |
+| API documentation | Updated |
+| Testing report | Updated |
+| Final Git submission | Pending |
 
-- Flask backend setup
-- Modular route structure
-- Search and autocomplete APIs
-- Movie details and ratings APIs
-- Search history APIs
-- Frontend integration
-- API documentation
-- Git commits
+## 11. Known Limitations
 
-Pending:
+- The database contains a deterministic sample of MovieLens ratings rather than the complete dataset.
+- Search history is currently stored in memory and resets when the Flask application restarts.
+- Frontend user ID 101 currently has no rating history in the imported database.
+- User 94272 was used for personalized recommendation testing.
+- Final team-wide verification and Git submission preparation remain.
 
-- Student 1 search algorithm integration
-- Student 2 persistent database integration
-- Student 3 ranking and recommendation integration
-- Full dataset testing
-- Final end-to-end integration
+## 12. Conclusion
 
-## 11. Important Notes
+The CineSearch project integrates search algorithms, SQLite database management, ranking and recommendation methods, Flask REST APIs and frontend functionality.
 
-The interfaces in this document are proposed integration contracts, not proof that teammate modules have already implemented them.
+All four students' core modules have been integrated into the application.
 
-Before integration, each student should confirm their actual function names, parameters, return values and file locations.
+The latest combined automated test execution completed successfully with 39 passing tests and zero failures.
 
-Student 4 should adapt the integration layer rather than unnecessarily rewriting teammates' algorithms.
-
-The existing working application should be preserved until replacement modules have passed testing.
+The project is ready for final team review, submission preparation and presentation.

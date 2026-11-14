@@ -2,19 +2,26 @@
 
 ## 1. Project Overview
 
-CineSearch is a movie search and recommendation system.
+CineSearch is a movie search and recommendation system developed using Python Flask, SQLite and frontend web technologies.
 
-The backend is developed using Python Flask. The frontend communicates with the backend through REST APIs.
+The application provides movie search, autocomplete, movie details, ratings, search history and multiple recommendation algorithms through REST APIs.
 
 **Base URL:** `http://127.0.0.1:5000`
 
 ## 2. Technology Stack
 
-- Backend: Python, Flask
-- Frontend: HTML, CSS, JavaScript
-- API communication: REST API, JSON
-- Database: SQLite (planned integration)
-- Search and recommendation algorithms: Developed by team members
+| Technology | Purpose |
+|---|---|
+| Python | Backend programming |
+| Flask | REST API development |
+| SQLite | Database management |
+| NumPy | Numerical operations |
+| Scikit-learn | TF-IDF vectorization and cosine similarity |
+| HTML | Frontend structure |
+| CSS | Frontend styling |
+| JavaScript | Frontend functionality and API communication |
+| Pytest | Automated testing |
+| Git and GitHub | Version control and collaboration |
 
 ## 3. API Endpoints
 
@@ -24,20 +31,17 @@ The backend is developed using Python Flask. The frontend communicates with the 
 
 **Purpose:** Checks whether the backend server is running.
 
-Example response:
+Example:
 
-```json
-{
-  "status": "healthy",
-  "service": "CineSearch API"
-}
+```http
+GET /api/health
 ```
 
 ### 3.2 Search Movies
 
 **Endpoint:** `GET /api/search?q=movie_name`
 
-**Purpose:** Searches movies using a search query and supports Boolean AND and OR operations.
+**Purpose:** Searches movies using the integrated inverted index.
 
 **Query Parameters:**
 
@@ -50,69 +54,20 @@ Example response:
 
 - **AND (`mode=and`):** Returns movies containing all query terms.
 - **OR (`mode=or`):** Returns movies containing at least one query term.
-- **Default:** If no mode is specified, AND search is used.
 
-**Example 1 – AND Search:**
+Example:
 
-`GET /api/search?q=dark%20knight&mode=and`
-
-Example response:
-
-```json
-{
-  "query": "dark knight",
-  "total_results": 1,
-  "results": [
-    {
-      "id": 3,
-      "title": "The Dark Knight",
-      "year": 2008,
-      "genre": "Action, Drama"
-    }
-  ]
-}
+```http
+GET /api/search?q=Interstellar
 ```
 
-**Example 2 – OR Search:**
+Boolean OR example:
 
-`GET /api/search?q=interstellar%20inception&mode=or`
-
-Example response:
-
-```json
-{
-  "query": "interstellar inception",
-  "total_results": 2,
-  "results": [
-    {
-      "id": 2,
-      "title": "Interstellar",
-      "year": 2014,
-      "genre": "Adventure, Sci-Fi"
-    },
-    {
-      "id": 4,
-      "title": "Inception",
-      "year": 2010,
-      "genre": "Action, Sci-Fi"
-    }
-  ]
-}
+```http
+GET /api/search?q=interstellar%20inception&mode=or
 ```
 
-**Example 3 – Invalid Search Mode:**
-
-`GET /api/search?q=animation&mode=xyz`
-
-Example response:
-
-```json
-{
-  "error": "Invalid search mode. Use 'and' or 'or'."
-}
-```
-
-**Current implementation note:** The integrated search index currently uses movie titles as its indexed text. Genre-based searching is not yet integrated.
+The search service uses movie titles for indexed search.
 
 ### 3.3 Movie Autocomplete
 
@@ -122,30 +77,11 @@ Example response:
 
 Example:
 
-`GET /api/autocomplete?q=In`
-
-Example response:
-
-```json
-{
-  "query": "In",
-  "suggestions": [
-    {
-      "id": 2,
-      "title": "Interstellar",
-      "year": 2014,
-      "genre": "Adventure, Sci-Fi"
-    },
-    {
-      "id": 4,
-      "title": "Inception",
-      "year": 2010,
-      "genre": "Action, Sci-Fi"
-    }
-  ],
-  "total_suggestions": 2
-}
+```http
+GET /api/autocomplete?q=In
 ```
+
+The autocomplete functionality uses the integrated Trie data structure.
 
 ### 3.4 Get Movie Details
 
@@ -155,7 +91,9 @@ Example response:
 
 Example:
 
-`GET /api/movies/1`
+```http
+GET /api/movies/1
+```
 
 ### 3.5 Get Movie Ratings
 
@@ -165,13 +103,15 @@ Example:
 
 Example:
 
-`GET /api/movies/1/ratings`
+```http
+GET /api/movies/1/ratings
+```
 
 ### 3.6 Save Search History
 
 **Endpoint:** `POST /api/search-log`
 
-**Purpose:** Saves a user's search query.
+**Purpose:** Saves a user's search query during the current application runtime.
 
 Request body:
 
@@ -190,7 +130,9 @@ Request body:
 
 Example:
 
-`GET /api/users/101/history`
+```http
+GET /api/users/101/history
+```
 
 ### 3.8 Clear User Search History
 
@@ -200,69 +142,173 @@ Example:
 
 Example:
 
-`DELETE /api/users/101/history`
+```http
+DELETE /api/users/101/history
+```
 
-## 4. HTTP Status Codes
+**Important:** Search history is currently stored in memory and resets when the Flask application restarts.
+
+## 4. Recommendation APIs
+
+CineSearch provides five recommendation methods through dedicated REST endpoints.
+
+### 4.1 Popular Recommendations
+
+**Endpoint:** `GET /api/recommendations/popular?limit=5`
+
+**Purpose:** Returns popular movies ranked using rating count and average rating.
+
+Example:
+
+```http
+GET /api/recommendations/popular?limit=5
+```
+
+### 4.2 Genre-Based Recommendations
+
+**Endpoint:** `GET /api/recommendations/genre/<genre>?limit=5`
+
+**Purpose:** Returns movies belonging to the selected genre, ranked using composite scores.
+
+Example:
+
+```http
+GET /api/recommendations/genre/Comedy?limit=5
+```
+
+### 4.3 Genre-Affinity Recommendations
+
+**Endpoint:** `GET /api/recommendations/user/<user_id>/genre-affinity?limit=5`
+
+**Purpose:** Builds a user genre profile using positively rated movies and recommends unseen movies based on genre affinity.
+
+Example:
+
+```http
+GET /api/recommendations/user/94272/genre-affinity?limit=5
+```
+
+### 4.4 User Co-occurrence Recommendations
+
+**Endpoint:** `GET /api/recommendations/user/<user_id>/cooccurrence?limit=5`
+
+**Purpose:** Uses overlapping positive ratings between users to identify potential movie recommendations.
+
+Example:
+
+```http
+GET /api/recommendations/user/94272/cooccurrence?limit=5
+```
+
+### 4.5 Jaccard Similarity Recommendations
+
+**Endpoint:** `GET /api/recommendations/user/<user_id>/jaccard?limit=5`
+
+**Purpose:** Calculates Jaccard similarity between movie rating user sets and recommends similar unseen movies.
+
+Example:
+
+```http
+GET /api/recommendations/user/94272/jaccard?limit=5
+```
+
+### Recommendation Response Structure
+
+Recommendation endpoints return JSON containing fields such as:
+
+- `count`
+- `recommendations`
+- `user_id` or `genre`, where applicable
+
+Movie recommendation objects include:
+
+- `id`
+- `title`
+- `year`
+- `release_year`
+- `genre` / `genres`
+- `average_rating`
+- `rating_count`
+
+The exact additional fields depend on the endpoint.
+
+## 5. Database Integration
+
+The project uses SQLite.
+
+**Database path:**
+
+`database/cinesearch.db`
+
+The database contains:
+
+- `movie`
+- `genre`
+- `movie_genre`
+- `app_user`
+- `rating`
+- `tag_event`
+- `movie_stats`
+
+The MovieLens 32M dataset was used. A deterministic sample of approximately one million ratings was imported rather than the entire ratings dataset.
+
+The `movie_stats` table stores precomputed rating counts and average ratings for recommendation calculations.
+
+## 6. HTTP Status Codes
 
 | Status Code | Meaning |
 |---|---|
 | 200 | Request successful |
-| 201 | Resource created |
+| 201 | Resource created, where applicable |
 | 400 | Invalid request |
 | 404 | Resource not found |
 | 500 | Internal server error |
 
-## 5. Team Integration Responsibilities
+## 7. Frontend Integration
+
+The frontend communicates with the Flask backend using JavaScript Fetch API requests.
+
+Implemented features include:
+
+- Movie search
+- Autocomplete suggestions
+- Genre and minimum-rating filters
+- Movie details popup
+- Recent search history
+- Popular recommendations
+- Genre-based recommendations
+- Genre-affinity recommendations
+- User co-occurrence recommendations
+- Jaccard similarity recommendations
+
+The recommendation cards display movie titles, release years, genres, average ratings and rating counts.
+
+When personalized recommendations are unavailable, the frontend displays informative empty-state messages.
+
+## 8. Team Integration Responsibilities
 
 | Team Member | Responsibility | Integration Point |
 |---|---|---|
 | Student 1 | Search algorithms | Search service |
-| Student 2 | Database management | Data access layer |
+| Student 2 | Database management | SQLite database |
 | Student 3 | Ranking and recommendations | Ranking service |
 | Student 4 | Backend APIs, frontend and integration | Flask routes and frontend |
 
-## 6. Integration Guidelines
+## 9. Testing Results
 
-- All API responses should use JSON.
-- Search algorithms should return structured movie results.
-- Database operations should be handled through the database layer.
-- Ranking algorithms should accept movie search results and return ranked results.
-- The frontend should communicate with the backend using API requests.
-- Existing API response formats should be preserved where possible.
-- Any changes to API contracts should be discussed with the team.
+The latest combined automated test execution reported:
 
-## 7. Current Development Status
+| Testing Category | Total Tests | Passed | Failed |
+|---|---:|---:|---:|
+| Backend API tests | 28 | 28 | 0 |
+| Frontend tests | 11 | 11 | 0 |
+| **Total** | **39** | **39** | **0** |
 
-The following features have been implemented and tested:
+The recommendation APIs were also manually checked through HTTP requests, and the frontend recommendation sections were manually verified.
 
-- Flask backend setup
-- Movie search API
-- Boolean AND and OR search integration
-- Search mode validation
-- Text preprocessing and tokenization
-- Inverted index integration
-- Trie-based autocomplete integration
-- Top-K algorithm module tested independently
-- Movie details API
-- Movie ratings API
-- Search history API
-- Clear search history API
-- Frontend and backend integration
-- Movie details popup
-- Search history interface
+## 10. Running the Project
 
-**Testing Results:**
-
-- Backend API tests: 22 passed
-- Frontend tests: 11 passed
-- Student 1 search algorithm checks: All 4 checks passed
-- Boolean AND/OR API tests: Passed
-
-**Important:** Current movie and rating data are temporary mock data. Search history is stored in memory and resets when the backend restarts. Persistent database integration and ranking algorithm integration are pending. The Top-K utility has been tested independently but is not yet connected to a complete ranking pipeline.
-
-## 8. Running the Project
-
-Open a terminal in the project root.
+Open PowerShell in the project root.
 
 **Start the backend:**
 
@@ -270,10 +316,12 @@ Open a terminal in the project root.
 python backend/app.py
 ```
 
+Keep this terminal running.
+
 **Start the frontend in another terminal:**
 
 ```powershell
-cd frontend
+Set-Location frontend
 python -m http.server 5500
 ```
 
@@ -284,3 +332,13 @@ python -m http.server 5500
 **Backend API:**
 
 `http://127.0.0.1:5000`
+
+## 11. Current Implementation Notes
+
+- Movie search uses the integrated title-based inverted index.
+- Autocomplete uses a Trie.
+- Recommendation algorithms are integrated into the Flask backend.
+- Search history is stored in memory and is not persistent across server restarts.
+- Personalized recommendation results depend on the selected user's rating history.
+- User 101 currently has no rating history in the imported database; user 94272 was used for personalized recommendation testing.
+- The latest combined automated test suite passed all 39 tests.

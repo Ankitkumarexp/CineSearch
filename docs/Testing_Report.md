@@ -2,11 +2,11 @@
 
 ## 1. Introduction
 
-This document describes the automated testing performed on the CineSearch application.
+This document describes the automated and manual testing performed on the CineSearch application.
 
-The purpose of testing is to verify the functionality of the Flask backend, validate API responses, test frontend interactions, identify errors and ensure that the application behaves as expected.
+The purpose of testing is to verify Flask backend functionality, validate API responses, test frontend interactions, verify database integration and ensure that the application behaves as expected.
 
-Both backend API testing and frontend browser testing have been performed.
+Testing covers backend APIs, search algorithms, recommendation services, frontend functionality and database validation.
 
 ## 2. Testing Environment
 
@@ -14,38 +14,36 @@ Both backend API testing and frontend browser testing have been performed.
 |---|---|
 | Programming Language | Python 3.14.10 |
 | Backend Framework | Flask |
-| Backend Testing Framework | Pytest 9.2.0 |
-| Frontend Testing Framework | Playwright |
-| Coverage Tool | pytest-cov 7.1.0 |
+| Testing Framework | Pytest |
+| Frontend Testing | Playwright |
+| Database | SQLite |
+| Recommendation Algorithms | Python, NumPy, Scikit-learn |
 | Frontend | HTML, CSS, JavaScript |
-| Operating System | Windows |
+| Operating System | Windows 11 |
 | API Format | JSON |
-| Browser Testing | Chromium (Headless) |
+| Browser Testing | Chromium |
 
 ## 3. Testing Approach
 
-Two types of automated testing were performed.
+Three types of verification were performed.
 
 ### 3.1 Backend API Testing
 
 Backend testing was performed using Pytest and Flask's built-in test client.
 
-The test client sends HTTP requests directly to the Flask application without requiring the development server to run separately.
-
 Testing includes:
-- Functional testing
-- API response validation
-- Input validation
-- Error handling
-- Search functionality testing
-- Search history testing
-- Movie ratings testing
+- Backend health check
+- Movie search and autocomplete
+- Boolean AND/OR search
+- Movie details and ratings
+- Search history operations
+- Input validation and error handling
+- Recommendation API endpoints
+- Invalid recommendation limits
 
 ### 3.2 Frontend Browser Testing
 
 Frontend testing was performed using Playwright with Chromium.
-
-These tests simulate user interactions with the CineSearch website and verify that the frontend works correctly with the backend API.
 
 Testing includes:
 - Frontend page loading
@@ -57,38 +55,53 @@ Testing includes:
 - Search history section
 - Filter controls
 
-## 4. Backend Test Cases
+### 3.3 Manual Integration Testing
 
-A total of 22 automated backend test cases were executed.
+Additional manual verification was performed for:
+- SQLite database connectivity
+- MovieLens data import
+- Search algorithm integration
+- Ranking model initialization
+- Popular movie recommendations
+- Genre-based recommendations
+- Personalized recommendation endpoints
+- Frontend recommendation display
+- Jaccard similarity results
 
-| No. | Test Case | Expected Result |
-|---|---|---|
-| 1 | Homepage | HTTP 200 |
-| 2 | Backend health check | Healthy status |
-| 3 | Movie search | Matching results |
-| 4 | Search without query | HTTP 400 |
-| 5 | Movie autocomplete | Suggestions returned |
-| 6 | Movie details | Movie information returned |
-| 7 | Invalid movie ID | HTTP 404 |
-| 8 | Movie ratings | Rating information returned |
-| 9 | Search history workflow | Save, retrieve and delete successfully |
-| 10 | Autocomplete without query | HTTP 400 |
-| 11 | Search log without JSON | HTTP 400 |
-| 12 | Search log without user ID | HTTP 400 |
-| 13 | Search log with zero user ID | HTTP 400 |
-| 14 | Search log with negative user ID | HTTP 400 |
-| 15 | Search log with Boolean user ID | HTTP 400 |
-| 16 | Search log with string user ID | HTTP 400 |
-| 17 | Search log with empty query | HTTP 400 |
-| 18 | Empty search service query | Empty result |
-| 19 | Empty autocomplete query | Empty result |
-| 20 | Autocomplete result limit | Limited suggestions |
-| 21 | Movie without ratings | Zero average rating |
-| 22 | Ratings for missing movie | HTTP 404 |
+## 4. Backend API Test Cases
+
+A total of 28 automated backend API tests passed.
+
+The tests cover:
+
+- Homepage and health check
+- Movie search and empty queries
+- Autocomplete and suggestion limits
+- Movie details and invalid movie IDs
+- Movie ratings and missing movie ratings
+- Search history save, retrieval and deletion
+- Search-log input validation
+- Popular recommendations
+- Genre recommendations
+- Genre-affinity recommendations
+- Co-occurrence recommendations
+- Jaccard recommendations
+- Invalid recommendation limits
+
+### Recommendation Test Cases
+
+| Test Case | Expected Result |
+|---|---|
+| Popular recommendations | Movie recommendations returned |
+| Genre recommendations | Matching genre movies returned |
+| Genre affinity | Valid personalized results or empty results |
+| Co-occurrence | Valid recommendations or empty results |
+| Jaccard similarity | Recommendations with similarity scores |
+| Invalid recommendation limit | Invalid limit handled correctly |
 
 ## 5. Frontend Test Cases
 
-A total of 11 automated frontend test cases were executed using Playwright.
+A total of 11 automated frontend tests passed using Playwright.
 
 | No. | Test Case | Expected Result |
 |---|---|---|
@@ -104,9 +117,11 @@ A total of 11 automated frontend test cases were executed using Playwright.
 | 10 | Movie details popup | Popup opens successfully |
 | 11 | Close movie popup | Popup closes successfully |
 
+The recommendation sections were additionally checked manually in the browser.
+
 ## 6. Test Execution
 
-### 6.1 Backend Test Execution
+### 6.1 Backend API Testing
 
 Command:
 
@@ -116,15 +131,11 @@ python -m pytest tests/test_api.py -v
 
 Result:
 
-- Total tests: 22
-- Passed: 22
+- Total tests: 28
+- Passed: 28
 - Failed: 0
 
-**Overall result: All 22 backend tests passed.**
-
-### 6.2 Frontend Test Execution
-
-The Flask backend must be running before executing the frontend tests. The Playwright test fixture starts its own frontend server.
+### 6.2 Frontend Testing
 
 Command:
 
@@ -132,108 +143,122 @@ Command:
 python -m pytest tests/test_frontend.py -v
 ```
 
+The Flask backend must be running before executing the frontend tests. The Playwright fixture starts its own frontend server.
+
 Result:
 
 - Total tests: 11
 - Passed: 11
 - Failed: 0
-- Execution time: 23.51 seconds
-
-**Overall result: All 11 frontend tests passed.**
 
 ### 6.3 Combined Testing Summary
 
 | Testing Category | Total Tests | Passed | Failed |
 |---|---:|---:|---:|
-| Backend API Testing | 22 | 22 | 0 |
-| Frontend Browser Testing | 11 | 11 | 0 |
-| **Total** | **33** | **33** | **0** |
+| Backend API Testing | 28 | 28 | 0 |
+| Frontend Testing | 11 | 11 | 0 |
+| **Total** | **39** | **39** | **0** |
 
-**Overall result: All 33 automated tests passed.**
+**Latest verified combined execution: 39 passed in 27.90 seconds.**
 
-## 7. Code Coverage Analysis
+## 7. Database Validation
 
-Backend code coverage was generated using:
+The project uses SQLite with the database file:
 
-```powershell
-python -m pytest --cov=app --cov=routes --cov=services --cov-report=term-missing tests/test_api.py
-```
+`database/cinesearch.db`
 
-### Module-wise Coverage
+The database contains:
 
-| Module | Coverage |
-|---|---:|
-| app.py | 95% |
-| routes/__init__.py | 100% |
-| movie_routes.py | 100% |
-| rating_routes.py | 100% |
-| search_routes.py | 100% |
-| user_routes.py | 100% |
-| services/__init__.py | 100% |
-| logging_service.py | 100% |
-| search_service.py | 100% |
-| **Overall Backend** | **99%** |
+- Movie records
+- Genre records
+- Movie-genre relationships
+- User records
+- Rating records
+- Tag records
+- Precomputed movie statistics
 
-## 8. Coverage Summary
+The MovieLens 32M dataset was used. A deterministic sample of approximately one million ratings was imported instead of the complete ratings dataset.
 
-The backend contains 113 executable statements.
+Database validation included:
+- Table creation
+- Data import verification
+- Record count checks
+- Foreign key validation
+- Movie statistics validation
+- Rating statistics comparison
 
-- Executed statements: 112
-- Missed statements: 1
-- Overall backend coverage: 99%
+The movie statistics calculation was benchmarked and showed approximately 49.96x speedup compared with live average calculations in the recorded benchmark.
 
-The only uncovered statement is the Flask development-server startup instruction:
+## 8. Search and Recommendation Verification
 
-```python
-app.run(debug=True)
-```
+### Search
 
-This statement is normally not executed during API tests because the Flask test client is used instead.
+The integrated search implementation uses:
+- Text preprocessing and tokenization
+- Inverted index
+- Boolean AND/OR search
+- Trie-based autocomplete
+- Top-K result selection
 
-Note: The 99% coverage figure represents backend code coverage only. Frontend browser tests are not included in this calculation.
+### Recommendations
 
-## 9. Testing Results
+Five recommendation methods were integrated:
 
-The automated tests confirm that:
+1. Popular recommendations
+2. Genre-based recommendations
+3. Genre-affinity recommendations
+4. User co-occurrence recommendations
+5. Jaccard similarity recommendations
+
+The recommendation endpoints were manually tested and automated API tests passed.
+
+The Jaccard implementation returned five recommendations for user 94272 in approximately 4.75 seconds during one recorded test.
+
+## 9. Search History and Current Limitations
+
+Search history operations are currently handled by the in-memory `search_logs` Python list in `backend/services/logging_service.py`.
+
+Therefore:
+- Search history can be added, retrieved and cleared during runtime.
+- Search history resets when the Flask application restarts.
+- Persistent search history storage in SQLite is not currently implemented.
+
+The frontend currently uses user ID 101. This user has no rating history in the imported database, so personalized recommendation sections display informative empty-state messages.
+
+User 94272 was used for personalized recommendation testing.
+
+The imported MovieLens ratings are a sample, not the complete 32-million-rating dataset.
+
+## 10. Code Coverage
+
+The previous testing report recorded 99% backend coverage for an earlier implementation.
+
+That figure has not been re-measured against the latest 28 API tests and should not be treated as the current coverage result.
+
+A fresh coverage run is required before reporting an updated percentage.
+
+## 11. Testing Results
+
+The latest automated test execution confirms:
 
 1. The Flask backend responds successfully.
-2. Movie search and autocomplete work correctly.
-3. Movie details can be retrieved.
-4. Movie ratings are calculated and returned.
-5. Invalid movie IDs are handled correctly.
-6. Search history can be saved and retrieved.
-7. Search history can be cleared.
-8. Invalid search-log requests are rejected.
-9. Empty queries are handled safely.
-10. The frontend loads successfully.
-11. Users can search for movies through the interface.
-12. Autocomplete suggestions work.
-13. Movie details can be viewed in a popup.
-14. The movie popup can be closed.
+2. Movie search and autocomplete work.
+3. Boolean AND/OR search is integrated.
+4. Movie details and ratings APIs work.
+5. Search history operations work during runtime.
+6. Recommendation APIs return valid responses.
+7. Invalid recommendation limits are handled.
+8. The frontend loads successfully.
+9. Search and autocomplete work through the interface.
+10. Movie details popup works.
+11. Recommendation sections display results or appropriate empty-state messages.
 
-## 10. Current Limitations
+## 12. Conclusion
 
-The current testing results apply to the existing implementation and temporary test data.
+CineSearch successfully passed 39 automated tests, including 28 backend API tests and 11 frontend tests.
 
-The following areas still require testing during final integration:
+The project also underwent manual verification of database integration, search algorithms, recommendation services and frontend recommendation display.
 
-- Persistent database operations
-- Full MovieLens dataset integration
-- Student 1's search algorithm
-- Student 3's ranking and recommendation algorithms
-- End-to-end integration with final production data
-- Performance under multiple simultaneous users
+The latest combined test execution completed with zero failures.
 
-Search history currently uses in-memory storage and resets when the Flask server restarts.
-
-## 11. Conclusion
-
-The CineSearch application has successfully passed 33 automated test cases, including 22 backend API tests and 11 frontend browser tests.
-
-The backend achieved an overall code coverage of 99%.
-
-These results provide a reliable foundation for identifying errors, validating application functionality and supporting future development.
-
-Further testing will be performed after integration of the database, search algorithms and recommendation modules.
-
-**Testing status: Initial backend and frontend automated testing completed successfully.**
+The application has completed its core backend, database, search, recommendation and frontend integration work. Remaining activities include final team-wide verification, documentation review and Git submission preparation.

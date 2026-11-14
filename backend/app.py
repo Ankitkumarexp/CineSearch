@@ -15,6 +15,7 @@ from routes.movie_routes import movie_bp
 from routes.search_routes import search_bp
 from routes.rating_routes import rating_bp
 from routes.user_routes import user_bp
+from routes.recommendation_routes import recommendation_bp
 
 # Initialize Flask application
 app = Flask(__name__)
@@ -27,7 +28,7 @@ app.register_blueprint(search_bp)
 app.register_blueprint(movie_bp)
 app.register_blueprint(rating_bp)
 app.register_blueprint(user_bp)
-
+app.register_blueprint(recommendation_bp)
 
 # Home API
 @app.route("/")
