@@ -186,7 +186,7 @@ def get_movie_ratings(movie_id):
 
     try:
         rows = connection.execute("""
-            SELECT user_id, rating
+            SELECT user_id, rating, rating_source
             FROM rating
             WHERE movie_id = ?
             ORDER BY user_id
@@ -195,7 +195,8 @@ def get_movie_ratings(movie_id):
         return [
             {
                 "user_id": row["user_id"],
-                "rating": row["rating"]
+                "rating": row["rating"],
+                "rating_source": row["rating_source"]
             }
             for row in rows
         ]

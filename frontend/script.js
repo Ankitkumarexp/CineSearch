@@ -1,7 +1,6 @@
 
 const API = "http://127.0.0.1:5000";
-const USER_ID = 101;
-
+const USER_ID = 999999;
 const $ = id => document.getElementById(id);
 
 let currentMovies = [];
@@ -46,9 +45,16 @@ async function autocomplete(query) {
 }
 
 async function getMovieRatings(movieId) {
-  const response = await fetch(`${API}/api/movies/${movieId}/ratings`);
+  const response = await fetch(
+    `${API}/api/movies/${movieId}/ratings?user_id=${USER_ID}`
+  );
+
   const data = await response.json();
-  if (!response.ok) throw new Error(data.error || `HTTP ${response.status}`);
+
+  if (!response.ok) {
+    throw new Error(data.error || `HTTP ${response.status}`);
+  }
+
   return data;
 }
 
@@ -187,6 +193,7 @@ async function clearHistory() {
 }
 
 // Render movie cards
+
 function render() {
   const genre = $("genreFilter").value.toLowerCase();
   const min = Number($("ratingFilter").value);
@@ -214,28 +221,58 @@ function render() {
 
   $("results").innerHTML = rows.map(movie => {
     const rating = ratingOf(movie);
+    const movieId = Number(movie.id);
 
     const tags = genresOf(movie)
       .map(g => `<span>${safe(g)}</span>`)
       .join("");
 
     return `
-      <article class="card" data-movie-id="${safe(movie.id)}" tabindex="0" role="button">
-        <h3>${safe(movie.title || "Untitled movie")}</h3>
-        <div class="meta">
-          ${safe(movie.year ?? movie.release_year ?? "Year unavailable")}
+      <article class="card movie-card"
+        data-movie-id="${movieId}"
+        tabindex="0"
+        role="button">
+
+
+        
+      
+      <div class="movie-poster-wrap">
+        <img
+          class="movie-poster"
+          src="${API}/api/movies/${movieId}/poster"
+          alt="${safe(movie.title)} poster"
+          loading="lazy"
+          onload="this.nextElementSibling.hidden=true;"
+          onerror="this.style.display='none'; this.nextElementSibling.querySelector('p').textContent='Poster unavailable';">
+
+        <div class="poster-placeholder">
+          <span>🎬</span>
+          <p>Loading poster...</p>
         </div>
-        <div class="tags">
-          ${tags || "<span>Genre unavailable</span>"}
+      </div>
+
+        <div class="movie-card-content">
+          <h3>${safe(movie.title || "Untitled movie")}</h3>
+
+          <div class="meta">
+            ${safe(movie.year ?? movie.release_year ?? "Year unavailable")}
+          </div>
+
+          <div class="tags">
+            ${tags || "<span>Genre unavailable</span>"}
+          </div>
+
+          <div class="rating-text ${rating == null ? "no-rating" : ""}">
+            ${rating == null ? "Rating not available" : `★ ${safe(rating)} / 5`}
+          </div>
+
+          <div class="meta">Click to view details</div>
         </div>
-        <div class="rating-text ${rating == null ? "no-rating" : ""}">
-          ${rating == null ? "Rating not available" : `★ ${safe(rating)} / 5`}
-        </div>
-        <div class="meta">Click to view details</div>
       </article>
     `;
   }).join("");
 }
+
 
 // Autocomplete suggestions
 function showSuggestions(movies) {
@@ -296,7 +333,13 @@ async function runSearch() {
       rating: ratings[index]?.average_rating ?? null
     }));
 
-    render();
+      render();
+
+    // Automatically bring search results into view
+    document.querySelector(".search-section").scrollIntoView({
+      behavior: "smooth",
+      block: "start"
+    });
 
     $("apiStatus").textContent =
       "Connected to CineSearch backend.";
@@ -322,6 +365,7 @@ async function runSearch() {
 }
 
 // Movie details popup
+
 async function openMovieDetails(movieId) {
   $("movieModal").hidden = false;
   $("movieDetails").innerHTML =
@@ -338,11 +382,81 @@ async function openMovieDetails(movieId) {
       <h2>${safe(movie.title)}</h2>
       <p>Release year: ${safe(movie.year ?? movie.release_year ?? "Unavailable")}</p>
       <p>Genres: ${genresOf(movie).map(safe).join(", ") || "Unavailable"}</p>
-      <p class="modal-rating">
-        ${ratings ? `★ ${safe(ratings.average_rating)} / 5` : "Rating not available"}
-      </p>
-      <p>Total ratings: ${safe(ratings?.total_ratings ?? 0)}</p>
+      <div class="rating-breakdown">
+  <p><strong>MovieLens Rating:</strong>
+    ${ratings?.movielens_average ?? "Not available"} / 5
+    (${ratings?.movielens_total ?? 0} ratings)
+  </p>
+
+  <p><strong>Community Rating:</strong>
+    ${ratings?.community_average ?? "Not rated"} / 5
+    (${ratings?.community_total ?? 0} ratings)
+  </p>
+
+  <p><strong>Your Rating:</strong>
+    ${ratings?.your_rating ?? "Not rated"} / 5
+  </p>
+</div>
+      <div class="user-rating">
+        <label for="userMovieRating">Rate this movie (1–5):</label>
+        <select id="userMovieRating">
+          <option value="5">★★★★★ - 5</option>
+          <option value="4">★★★★ - 4</option>
+          <option value="3">★★★ - 3</option>
+          <option value="2">★★ - 2</option>
+          <option value="1">★ - 1</option>
+        </select>
+        <button id="submitMovieRating" type="button">
+          Submit Rating
+        </button>
+        <p id="ratingMessage"></p>
+      </div>
     `;
+
+    $("submitMovieRating").addEventListener("click", async () => {
+      const rating = Number($("userMovieRating").value);
+      const message = $("ratingMessage");
+      const button = $("submitMovieRating");
+
+      button.disabled = true;
+      message.textContent = "Saving rating...";
+
+      try {
+        const response = await fetch(
+          `${API}/api/movies/${movieId}/ratings`,
+          {
+            method: "POST",
+            headers: {
+              "Content-Type": "application/json"
+            },
+            body: JSON.stringify({
+              user_id: USER_ID,
+              rating: rating
+            })
+          }
+        );
+
+        const result = await response.json();
+
+        if (!response.ok) {
+          throw new Error(result.error || result.message || "Rating failed");
+        }
+
+        message.textContent = "✓ Rating submitted successfully!";
+        message.style.color = "#78d8a2";
+
+        // Allow another rating submission.
+        button.disabled = false;
+
+        // Refresh personalized recommendations.
+        await loadPersonalizedRecommendations();
+
+      } catch (error) {
+        console.error("Rating submission error:", error);
+        message.textContent = error.message;
+        button.disabled = false;
+      }
+    });
 
   } catch (error) {
     console.error("Movie details error:", error);
@@ -351,21 +465,26 @@ async function openMovieDetails(movieId) {
   }
 }
 
+// Search result card click and keyboard events
 $("results").addEventListener("click", event => {
-  const card = event.target.closest(".card");
-  if (card) openMovieDetails(card.dataset.movieId);
+  const card = event.target.closest(".card[data-movie-id]");
+
+  if (card) {
+    openMovieDetails(Number(card.dataset.movieId));
+  }
 });
 
 $("results").addEventListener("keydown", event => {
   if (event.key !== "Enter" && event.key !== " ") return;
 
-  const card = event.target.closest(".card");
+  const card = event.target.closest(".card[data-movie-id]");
 
   if (card) {
     event.preventDefault();
-    openMovieDetails(card.dataset.movieId);
+    openMovieDetails(Number(card.dataset.movieId));
   }
 });
+
 
 // Modal controls
 $("closeModal").addEventListener("click", () => {
@@ -405,13 +524,21 @@ $("searchInput").addEventListener("input", () => {
   }, 250);
 });
 
-$("searchButton").addEventListener("click", runSearch);
-
-$("searchInput").addEventListener("keydown", event => {
-  if (event.key === "Enter") runSearch();
-  if (event.key === "Escape") $("suggestions").hidden = true;
+$("searchButton").addEventListener("click", event => {
+  event.preventDefault();
+  runSearch();
 });
 
+$("searchInput").addEventListener("keydown", event => {
+  if (event.key === "Enter") {
+    event.preventDefault();
+    runSearch();
+  }
+
+  if (event.key === "Escape") {
+    $("suggestions").hidden = true;
+  }
+});
 document.addEventListener("click", event => {
   if (!event.target.closest(".search")) {
     $("suggestions").hidden = true;
@@ -470,6 +597,7 @@ async function fetchRecommendations(endpoint) {
   }
 }
 
+
 function renderRecommendations(containerId, movies, emptyMessage) {
   const container = $(containerId);
 
@@ -483,38 +611,60 @@ function renderRecommendations(containerId, movies, emptyMessage) {
   }
 
   container.innerHTML = movies.map(movie => {
-    const genres = movie.genres || movie.genre || [];
+    const genres = genresOf(movie);
     const rating = Number(movie.average_rating);
     const year = movie.release_year || movie.year || "Year unknown";
+    const movieId = Number(movie.id);
 
     return `
-      <article class="card recommendation-card"
-        data-movie-id="${Number(movie.id)}"
+      <article class="card recommendation-card movie-card"
+        data-movie-id="${movieId}"
         tabindex="0"
         role="button"
         aria-label="View ${safe(movie.title)}">
 
-        <h3>${safe(movie.title)}</h3>
+        
+        
+        <div class="movie-poster-wrap">
+          <img
+            class="movie-poster"
+            src="${API}/api/movies/${movieId}/poster"
+            alt="${safe(movie.title)} poster"
+            loading="lazy"
+            onload="this.nextElementSibling.hidden=true;"
+            onerror="this.style.display='none'; this.nextElementSibling.querySelector('p').textContent='Poster unavailable';">
 
-        <p class="meta">${safe(year)}</p>
-
-        <div class="tags">
-          ${genres.map(genre =>
-            `<span>${safe(genre)}</span>`
-          ).join("")}
+          <div class="poster-placeholder">
+            <span>🎬</span>
+            <p>Loading poster...</p>
+          </div>
         </div>
 
-        <p class="rating-text">
-          ★ ${Number.isFinite(rating) ? rating.toFixed(2) : "N/A"} / 5
-        </p>
 
-        <p class="meta">
-          ${Number(movie.rating_count || 0).toLocaleString()} ratings
-        </p>
+        <div class="movie-card-content">
+          <h3>${safe(movie.title)}</h3>
+
+          <p class="meta">${safe(year)}</p>
+
+          <div class="tags">
+            ${genres.map(genre =>
+              `<span>${safe(genre)}</span>`
+            ).join("")}
+          </div>
+
+          <p class="rating-text">
+            ★ ${Number.isFinite(rating) ? rating.toFixed(2) : "N/A"} / 5
+          </p>
+
+          <p class="meta">
+            ${Number(movie.rating_count || 0).toLocaleString()} ratings
+          </p>
+        </div>
       </article>
     `;
   }).join("");
 }
+
 
 async function loadPopularRecommendations() {
   const data = await fetchRecommendations(

@@ -44,6 +44,8 @@ CREATE TABLE IF NOT EXISTS rating (
     rating REAL NOT NULL
         CHECK(rating >= 0.5 AND rating <= 5.0),
     timestamp INTEGER NOT NULL,
+    rating_source TEXT NOT NULL DEFAULT 'movielens'
+    CHECK(rating_source IN ('movielens', 'community')),
     FOREIGN KEY (user_id) REFERENCES app_user(user_id)
         ON DELETE CASCADE,
     FOREIGN KEY (movie_id) REFERENCES movie(movie_id)

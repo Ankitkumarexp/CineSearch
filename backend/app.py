@@ -2,7 +2,7 @@
 import sys
 from pathlib import Path
 
-from flask import Flask, jsonify
+from flask import Flask, jsonify, send_from_directory
 from flask_cors import CORS
 
 # Add the CineSearch project root to Python's import path.
@@ -19,6 +19,7 @@ from routes.recommendation_routes import recommendation_bp
 
 # Initialize Flask application
 app = Flask(__name__)
+FRONTEND_DIR = PROJECT_ROOT / "frontend"
 
 # Enable frontend communication
 CORS(app)
@@ -33,10 +34,12 @@ app.register_blueprint(recommendation_bp)
 # Home API
 @app.route("/")
 def home():
-    return jsonify({
-        "project": "CineSearch",
-        "message": "Backend is running successfully!"
-    })
+    return send_from_directory(FRONTEND_DIR, "index.html")
+
+
+@app.route("/<path:filename>")
+def frontend_files(filename):
+    return send_from_directory(FRONTEND_DIR, filename)
 
 
 # Health check API
@@ -50,4 +53,4 @@ def health():
 
 # Start server
 if __name__ == "__main__":
-    app.run(debug=True)
+   app.run(host="127.0.0.1", port=5000, debug=False)

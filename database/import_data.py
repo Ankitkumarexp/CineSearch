@@ -17,7 +17,6 @@ DATA_DIR = os.path.join(BASE_DIR, "data", "ml-32m")
 DB_PATH = os.path.join(BASE_DIR, "database", "cinesearch.db")
 
 CHUNK_SIZE = 200_000
-RATING_SAMPLE_DIVISOR = 32
 
 
 def extract_year(title):
@@ -134,7 +133,7 @@ def import_movies(conn):
 
 
 def import_ratings(conn):
-    """Import reproducible Stage 1 ratings subset."""
+    """Import all original MovieLens ratings in chunks."""
 
     print("\nImporting ratings in chunks...")
 
@@ -151,12 +150,7 @@ def import_ratings(conn):
         chunksize=CHUNK_SIZE
     ):
 
-        subset = chunk[
-            chunk["userId"] % RATING_SAMPLE_DIVISOR == 0
-        ]
-
-        if subset.empty:
-            continue
+        subset = chunk
 
         users = set(subset["userId"].unique())
         new_users = users - inserted_users
